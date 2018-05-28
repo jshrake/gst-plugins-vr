@@ -4,7 +4,7 @@ in vec3 position;
 // in vec2 uv;
 uniform mat4 mvp;
 out vec2 out_uv;
-uniform sampler2D texture;
+uniform sampler2D tex;
 
 void main()
 {
@@ -15,8 +15,8 @@ void main()
     // directly from the vertex shader and set each point's location
     // according to its nearest sampled depth value.
     //vec4 texel = textureLod(texture, in_xy, 0.0);
-    
-    vec4 texel = texture2D(texture, in_xy);
+
+    vec4 texel = texture(tex, in_xy);
 
     float depthValue = texel.r;
 

@@ -3,7 +3,7 @@
 #version 330
 precision highp float;
 
-uniform sampler2D texture;
+uniform sampler2D tex;
 uniform vec2 screen_size;
 
 const vec4 kappa = vec4(1.0, 0.22, 0.24, 0.0);
@@ -55,5 +55,5 @@ void main()
 
   // double mono video for fake stereo
 	//tc.x = gl_FragCoord.x < center_x ? (2.0 * tc.x) : (2.0 * (tc.x - 0.5));
-	frag_color = texture2D(texture, tc);
+	frag_color = texture(tex, tc);
 }
