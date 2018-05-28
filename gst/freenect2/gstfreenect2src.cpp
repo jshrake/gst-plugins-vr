@@ -36,7 +36,6 @@
 #endif
 
 #include <string.h>
-//#include <opencv2/opencv.hpp>
 #include "gstfreenect2src.h"
 
 GST_DEBUG_CATEGORY_STATIC (freenect2src_debug);
@@ -168,7 +167,6 @@ gst_freenect2_src_init (GstFreenect2Src * self)
   gst_base_src_set_live (GST_BASE_SRC (self), TRUE);
   gst_base_src_set_format (GST_BASE_SRC (self), GST_FORMAT_TIME);
   self->dev = NULL;
-  self->pipeline = NULL;
   self->listener = NULL;
   self->freenect2 = new libfreenect2::Freenect2 ();
 }
@@ -199,7 +197,6 @@ gst_freenect2_src_finalize (GObject * gobject)
 
   self->dev->close ();
   delete self->listener;
-  delete self->pipeline;
   // delete freenect2src->registration;
   //delete self->dev;
   //if (self->freenect2 != NULL)
@@ -435,16 +432,9 @@ freenect2_initialise_devices (GstFreenect2Src * self)
 
   std::string serial = self->freenect2->getDefaultDeviceSerialNumber ();
 
-  GST_DEBUG ("serial %s", serial.c_str ());
+  GST_DEBUG ("freenect2 device serial %s", serial.c_str ());
 
-  self->pipeline = new libfreenect2::OpenCLPacketPipeline ();
-
-  if (self->pipeline) {
-    self->dev = self->freenect2->openDevice (serial, self->pipeline);
-  } else {
-    GST_ERROR ("no pipeline!");
-    self->dev = self->freenect2->openDevice (serial);
-  }
+  self->dev = self->freenect2->openDevice (serial);
 
   if (self->dev == 0) {
     GST_ERROR ("failure opening device!");
