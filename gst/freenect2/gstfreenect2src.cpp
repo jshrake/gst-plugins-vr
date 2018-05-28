@@ -36,7 +36,7 @@
 #endif
 
 #include <string.h>
-#include <opencv2/opencv.hpp>
+//#include <opencv2/opencv.hpp>
 #include "gstfreenect2src.h"
 
 GST_DEBUG_CATEGORY_STATIC (freenect2src_debug);
@@ -204,7 +204,7 @@ gst_freenect2_src_finalize (GObject * gobject)
   //delete self->dev;
   //if (self->freenect2 != NULL)
   //  delete self->freenect2;
-  
+
   G_OBJECT_CLASS (parent_class)->finalize (gobject);
 }
 
@@ -437,7 +437,7 @@ freenect2_initialise_devices (GstFreenect2Src * self)
 
   GST_DEBUG ("serial %s", serial.c_str ());
 
-  self->pipeline = new libfreenect2::OpenGLPacketPipeline ();
+  self->pipeline = new libfreenect2::OpenCLPacketPipeline ();
 
   if (self->pipeline) {
     self->dev = self->freenect2->openDevice (serial, self->pipeline);
@@ -483,7 +483,7 @@ freenect2_initialise_devices (GstFreenect2Src * self)
 
 /*
   self->registration = new libfreenect2::Registration(
-    self->dev->getIrCameraParams(), 
+    self->dev->getIrCameraParams(),
     self->dev->getColorCameraParams());
 */
 
@@ -537,7 +537,7 @@ freenect2_read_gstbuffer (GstFreenect2Src * self, GstBuffer * buf)
       float mapped_float = pDepth[i] * 65.535f/4.0;
       pData[i] = (guint16) mapped_float;
     }
-      
+
   } else if (self->sourcetype == SOURCETYPE_IR) {
     ir = self->frames[libfreenect2::Frame::Ir];
     guint16 *pData = (guint16 *) GST_VIDEO_FRAME_PLANE_DATA (&vframe, 0);
