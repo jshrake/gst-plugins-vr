@@ -35,6 +35,9 @@
 #include "config.h"
 #endif
 
+// TODO(jshrake): MAX_DEPTH_MM should be configurable as a property
+#define MAX_DEPTH_MM 10000.0
+
 #include <string.h>
 #include "gstfreenect2src.h"
 
@@ -499,6 +502,7 @@ freenect2_read_gstbuffer (GstFreenect2Src * self, GstBuffer * buf)
     guint8 *pColor = (guint8 *) rgb->data;
     float *pDepth = (float *) depth->data;
 
+    float const map_to_uint8 = 255.0 / MAX_DEPTH_MM;
     for (unsigned j = 0; j < rgb->height; ++j) {
       for (unsigned i = 0; i < rgb->width; ++i) {
 
@@ -507,7 +511,8 @@ freenect2_read_gstbuffer (GstFreenect2Src * self, GstBuffer * buf)
         pData[4 * i + 0] = pColor[4 * i + 2];
         if (i < depth->width && j < depth->height) {
           unsigned index = depth->width * j + i;
-          pData[4 * i + 3] = (guint8) pDepth[index];
+          // Map the depth data (in mm) to [0, 255]
+          pData[4 * i + 3] = (guint8)((pDepth[index] * map_to_uint8);
         } else {
           pData[4 * i + 3] = 255;
         }
@@ -523,9 +528,9 @@ freenect2_read_gstbuffer (GstFreenect2Src * self, GstBuffer * buf)
     gfloat *pDepth = (float *) depth->data;
 
     //TODO: use 16-bit float buffers.
+    float const map_to_half_float = 65504.0 / MAX_DEPTH_MM;
     for (unsigned i = 0; i < depth->height * depth->width; ++i) {
-      float mapped_float = pDepth[i] * 65.535f/4.0;
-      pData[i] = (guint16) mapped_float;
+      pData[i] = pDepth[i] * map_to_half_float;
     }
 
   } else if (self->sourcetype == SOURCETYPE_IR) {
