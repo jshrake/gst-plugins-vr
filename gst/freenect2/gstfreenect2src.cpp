@@ -36,9 +36,11 @@
 #endif
 
 // TODO(jshrake): MAX_DEPTH_MM should be configurable as a property
-#define MAX_DEPTH_MM 10000.0
+#define MIN_DEPTH_MM 1000.0
+#define MAX_DEPTH_MM 4500.0
 
 #include <string.h>
+#include "float2half.h"
 #include "gstfreenect2src.h"
 
 GST_DEBUG_CATEGORY_STATIC (freenect2src_debug);
@@ -502,7 +504,8 @@ freenect2_read_gstbuffer (GstFreenect2Src * self, GstBuffer * buf)
     guint8 *pColor = (guint8 *) rgb->data;
     float *pDepth = (float *) depth->data;
 
-    float const map_to_uint8 = 255.0 / MAX_DEPTH_MM;
+    // Map the depth data from [0, 4500] (in mm) to [0, 255]
+    float const depth_to_uint8 = 255.0 / MAX_DEPTH_MM;
     for (unsigned j = 0; j < rgb->height; ++j) {
       for (unsigned i = 0; i < rgb->width; ++i) {
 
@@ -511,8 +514,9 @@ freenect2_read_gstbuffer (GstFreenect2Src * self, GstBuffer * buf)
         pData[4 * i + 0] = pColor[4 * i + 2];
         if (i < depth->width && j < depth->height) {
           unsigned index = depth->width * j + i;
-          // Map the depth data (in mm) to [0, 255]
-          pData[4 * i + 3] = (guint8)((pDepth[index] * map_to_uint8);
+          float depth = pDepth[index];
+          depth = depth >= 0.0 && depth <= MAX_DEPTH_MM ? depth : 0.0;
+          pData[4 * i + 3] = (guint8)(depth * depth_to_uint8);
         } else {
           pData[4 * i + 3] = 255;
         }
@@ -520,17 +524,16 @@ freenect2_read_gstbuffer (GstFreenect2Src * self, GstBuffer * buf)
       }
       pData += GST_VIDEO_FRAME_PLANE_STRIDE (&vframe, 0);
       pColor += rgb->bytes_per_pixel * rgb->width;
-      //pDepth += sizeof(float) * rgb->width;
     }
   } else if (self->sourcetype == SOURCETYPE_DEPTH) {
     depth = self->frames[libfreenect2::Frame::Depth];
     guint16 *pData = (guint16 *) GST_VIDEO_FRAME_PLANE_DATA (&vframe, 0);
     gfloat *pDepth = (float *) depth->data;
 
-    //TODO: use 16-bit float buffers.
-    float const map_to_half_float = 65504.0 / MAX_DEPTH_MM;
     for (unsigned i = 0; i < depth->height * depth->width; ++i) {
-      pData[i] = pDepth[i] * map_to_half_float;
+      FP32 depth;
+      depth.f = pDepth[i];
+      pData[i] = float_to_half_fast(depth).u;
     }
 
   } else if (self->sourcetype == SOURCETYPE_IR) {
